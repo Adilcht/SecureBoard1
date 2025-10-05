@@ -1,50 +1,75 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { API_URL } from "../config";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // ✅ import pour la redirection
 
-axios.defaults.withCredentials = true; // ⚠️ important
+export default function Register() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [message, setMessage] = useState("");
+  const navigate = useNavigate(); // ✅ hook pour naviguer
 
-function Register() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    password_confirmation: ""
-  });
-
-  const navigate = useNavigate();
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      // 1️⃣ récupérer CSRF cookie
-      await axios.get(`${API_URL.replace("/api", "")}/sanctum/csrf-cookie`);
+      const res = await axios.post(`${API_URL}/register`, {
+        name,
+        email,
+        password,
+        password_confirmation: passwordConfirmation,
+      });
 
-      // 2️⃣ envoyer le register
-      await axios.post(`${API_URL}/register`, form);
-      alert("✅ Registered successfully! Please login.");
-      navigate("/"); // redirection vers login
+      console.log("✅ Backend response:", res.data);
+      setMessage("✅ Registered successfully!");
+
+      // ✅ Redirige vers la page de login après 1 seconde
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
+
     } catch (err) {
-      console.error(err.response?.data);
-      alert("❌ Error registering user: " + JSON.stringify(err.response?.data));
+      console.error(err.response?.data || err);
+      setMessage("❌ Registration failed!");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <div>
       <h2>Register</h2>
-      <input name="name" placeholder="Name" onChange={handleChange} />
-      <input name="email" placeholder="Email" onChange={handleChange} />
-      <input type="password" name="password" placeholder="Password" onChange={handleChange} />
-      <input type="password" name="password_confirmation" placeholder="Confirm Password" onChange={handleChange} />
-      <button type="submit">Register</button>
-    </form>
+      <form onSubmit={handleRegister}>
+        <input
+          type="text"
+          placeholder="Name"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          required
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Confirm Password"
+          value={passwordConfirmation}
+          onChange={e => setPasswordConfirmation(e.target.value)}
+          required
+        />
+        <button type="submit">Register</button>
+      </form>
+      <p>{message}</p>
+    </div>
   );
 }
-
-export default Register;
